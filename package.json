@@ -1,0 +1,14 @@
+{
+    "name": "pulumi-azure-k8s",
+    "main": "index.ts",
+    "devDependencies": {
+        "@types/node": "^18",
+        "typescript": "^5.0.0"
+    },
+    "dependencies": {
+        "@pulumi/azure-native": "^3.0.0",
+        "@pulumi/kubernetes": "^4.34.2",
+        "@pulumi/pulumi": "^3.113.0",
+        "@three14/pulumi-argocd": "^1.1.3"
+    }
+}

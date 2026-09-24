@@ -1,0 +1,8 @@
+config:
+  azure-native:location: westus2
+  pulumi-azure-k8s:kubernetesVersion: "1.36"
+  pulumi-azure-k8s:mgmtGroupId: <put your management group here>
+  pulumi-azure-k8s:nodeVmSize: Standard_D2als_v7
+  pulumi-azure-k8s:numWorkerNodes: "2"
+  pulumi-azure-k8s:prefixForDns: pulumi
+  pulumi-azure-k8s:sshPubKey: <put an ssh key here>
