@@ -2,6 +2,7 @@ import * as pulumi from "@pulumi/pulumi";
 import * as resources from "@pulumi/azure-native/resources";
 import * as network from "@pulumi/azure-native/network";
 import * as containerservice from "@pulumi/azure-native/containerservice";
+import * as storage from "@pulumi/azure-native/storage"
 import * as k8s from "@pulumi/kubernetes";
 import { NginxPlusWebsite } from "./components/nginx-n-website";
 import * as argocd from "@three14/pulumi-argocd";
@@ -19,6 +20,45 @@ const sshPubKey = projCfg.require("sshPubKey");
 
 // Create a new Azure Resource Group
 const resourceGroup = new resources.ResourceGroup("resourceGroup", {});
+
+// ------------ Creating a storage account ------------
+
+const storageAccount = new storage.StorageAccount("pulumiStateStorage", {
+    kind: storage.Kind.StorageV2,
+    resourceGroupName: resourceGroup.name,
+    sku: {
+        name: storage.SkuName.Standard_GRS //GRS is a type of BlobStorage
+    },
+    accessTier: storage.AccessTier.Hot,
+    accountName: "paulscoolpulumistorage",
+    allowBlobPublicAccess: false,
+    allowSharedKeyAccess: true,
+});
+
+const encryptionScope = new storage.EncryptionScope("encryptionScope", {
+    accountName: storageAccount.name,
+    resourceGroupName: resourceGroup.name,
+    encryptionScopeName: "pulumiencryptionscope",
+    source: "Microsoft.Storage"
+})
+
+const storageContainer = new storage.BlobContainer("pulumiStateContainer", {
+    accountName: storageAccount.name,
+    resourceGroupName: resourceGroup.name,
+    containerName: "paulscoolpulumicontainer",
+    defaultEncryptionScope: encryptionScope.name,
+    denyEncryptionScopeOverride: true,
+}, { dependsOn: encryptionScope });
+
+const storageBlob = new storage.Blob("pulumiStateBlob", {
+    accountName: storageAccount.name,
+    resourceGroupName: resourceGroup.name,
+    containerName: storageContainer.name,
+    blobName: "paulscoolpulumiblob",
+    accessTier: storage.BlobAccessTier.Hot,
+})
+
+// ------------ Creating K8s resources ------------
 
 // Create a new Azure Virtual Network
 const virtualNetwork = new network.VirtualNetwork("virtualNetwork", {
@@ -128,9 +168,11 @@ const argoProvider = new argocd.Provider("provider", {
     password: process.env.ARGO_PASSWORD
 })
 
-/*const website = new NginxPlusWebsite("website", {
+/*
+const website = new NginxPlusWebsite("website", {
     k8sProvider: k8sProvider
-})*/
+})
+*/
 
 const argoNamespace = new k8s.core.v1.Namespace("argocd", {}, {provider: k8sProvider});
 
@@ -157,4 +199,4 @@ export const rgName = resourceGroup.name;
 export const networkName = virtualNetwork.name;
 export const clusterName = managedCluster.name;
 export const kubeconfig = decoded;
-export const adminKubeconfig = pulumi.secret(adminDecoded)
+//export const adminKubeconfig = pulumi.secret(adminDecoded)
